@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "FlF83KTXID9oGBCFKQQbaXnLw/0PiOTF15DQnLbJRNDm6+fnQK/Fj57sIuKWUiGBGhweFGv8AsyJSQoiu/u+8g==",
+  "success": true,
+  "projectFilePath": "/home/liran/Documents/CAB402GeneticAlgorithm/RandomMonad/RandomMonad.fsproj",
+  "expectedPackageFiles": [
+    "/home/liran/.nuget/packages/fsharp.core/5.0.0/fsharp.core.5.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
