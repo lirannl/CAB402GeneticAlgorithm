@@ -137,7 +137,7 @@ let randomIndividuals
     (numberIndividuals: int)
     : Rand<Population> =
     let scorer = score fitnessFunction
-    let indivGen (_: int) : Rand<Individual> = shuffle [| 0 .. numberGenes |]
+    let indivGen (_: int) : Rand<Individual> = shuffle [| 0 .. (numberGenes - 1) |]
 
     rand {
         let! pop = randArrayInit numberIndividuals indivGen
