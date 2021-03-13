@@ -150,8 +150,8 @@ let randomIndividuals
 // so there is a small chance that the same individual may be choosen twice.
 let procreate fitnessFunction (population: Population) : Rand<ScoredIndividual> =
     rand {
-        let! (parent1, _) = chooseRandom population
-        let! (parent2, _) = chooseRandom population
+        let! parent1 = tournamentSelect population
+        let! parent2 = tournamentSelect population
 
         let! unMutatedChild = cross parent1 parent2
         let! child = possiblyMutate unMutatedChild
@@ -176,7 +176,7 @@ let evolveForever
     (childPopulationLimit: int)
     : Rand<ScoredIndividual seq> =
     let evolver (pop: Population) =
-        (pop.[0], evolveOneGeneration fitnessFunction pop childPopulationLimit)
+        (fitest pop, evolveOneGeneration fitnessFunction pop childPopulationLimit)
 
     randSeqUnfold evolver initialPopulation
 
