@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CSharpGeneticAlgorithm
 {
-    class ScoredIndividual : IComparable<ScoredIndividual>
+    public class ScoredIndividual : IComparable<ScoredIndividual>
     {
         public int[] genes;
         public double score;

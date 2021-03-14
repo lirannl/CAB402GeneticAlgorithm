@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CSharpGeneticAlgorithm
 {
-    class Population : IEnumerable<ScoredIndividual>
+    public class Population : IEnumerable<ScoredIndividual>
     {
         public ScoredIndividual[] members;
         readonly Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction;
