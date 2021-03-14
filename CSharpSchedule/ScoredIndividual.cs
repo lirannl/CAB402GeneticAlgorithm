@@ -8,8 +8,8 @@ namespace CSharpGeneticAlgorithm
 {
     class ScoredIndividual : IComparable<ScoredIndividual>
     {
-        int[] genes;
-        double score;
+        public int[] genes;
+        public double score;
 
         public ScoredIndividual(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, int[] genes)
         {

@@ -12,6 +12,11 @@ namespace CSharpGeneticAlgorithm
         public ScoredIndividual[] members;
         readonly Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction;
 
+        Population(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, ScoredIndividual[] members)
+        {
+            this.fitnessFunction = fitnessFunction;
+            this.members = members;
+        }
         public Population(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, int geneCount, int memberCount, Random rand)
         {
             this.fitnessFunction = fitnessFunction;
@@ -27,12 +32,38 @@ namespace CSharpGeneticAlgorithm
         public ScoredIndividual ConductTournament(Random rand)
         {
             int n = 2;
-            var competitors = new ScoredIndividual[n];
+            // Randomly select two members of the population
+            var competitors = Enumerable.Range(0, n).Select(_=>RandomOps.Pick(members, rand));
+            return competitors.Max();
+
+        }
+
+        public Population ElitismSelection(Population children)
+        {
+            var membersList = members.ToList();
+            // Sort from least fit to most fit
+            membersList.Sort();
+            // Sort from most fit to least fit
+            membersList.Reverse();
+            return new Population(fitnessFunction, children.Concat(membersList.Take(10)).ToArray());
         }
 
         public ScoredIndividual Procreate(Random rand)
         {
+            var parent1 = ConductTournament(rand);
+            var parent2 = ConductTournament(rand);
 
+            return new ScoredIndividual(
+                fitnessFunction,
+                Individual.Cross(parent1.genes, parent2.genes, rand)
+            );
+        }
+
+        public Population Evolve(int children, Random rand)
+        {
+            var childPopulation = Enumerable.Range(0, children)
+                .Select(i => Procreate(rand)).ToArray();
+            return ElitismSelection(new Population(fitnessFunction, childPopulation));
         }
 
         public ScoredIndividual this[int index] { get => ((IList<ScoredIndividual>)members)[index]; set => ((IList<ScoredIndividual>)members)[index] = value; }
