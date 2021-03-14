@@ -27,5 +27,15 @@ namespace CSharpGeneticAlgorithm
 
             return segment;
         }
+        public static (T[], T[]) SplitArr<T>(int splitPoint, T[] source)
+        {
+            var left = new T[splitPoint];
+            var right = new T[source.Length - left.Length];
+
+            Array.Copy(source, left, left.Length);
+            Array.Copy(source, left.Length, right, 0, right.Length);
+
+            return (left, right);
+        }
     }
 }

@@ -24,7 +24,7 @@ namespace CSharpGeneticAlgorithm
             foreach (int i in Enumerable.Range(0, items.Length))
             {
                 // Take a random item from the list
-                T item = Pick(itemsList, rand);
+                var item = Pick(itemsList, rand);
                 itemsList.Remove(item);
                 // Write the item to the array
                 items[outputIdx] = item;
@@ -37,7 +37,7 @@ namespace CSharpGeneticAlgorithm
         // Return true with probability 'chance', otherwise false.
         public static bool Maybe(double chance, Random rand)
         {
-            double decision = rand.NextDouble();
+            var decision = rand.NextDouble();
             return decision <= chance;
         }
     }
