@@ -33,5 +33,12 @@ namespace CSharpGeneticAlgorithm
             }
             return items;
         }
+
+        // Return true with probability 'chance', otherwise false.
+        public static bool Maybe(double chance, Random rand)
+        {
+            double decision = rand.NextDouble();
+            return decision <= chance;
+        }
     }
 }
