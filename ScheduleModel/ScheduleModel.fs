@@ -52,8 +52,9 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // This makes the algorithm much faster as we only need to consider up to 5 possible start times, 
     // rather than up to 41 if every possible start point needed to be considered.
     let possibleStartTimes: Time list = 
-        // TODO: add correct implementation here
-        raise (System.NotImplementedException "possibleStartTimes")
+        let getStart = fun (scheduled: ScheduledEvent) -> scheduled.finishTime
+        List.append [0 :> Time] (List.map getStart alreadyScheduledEvents)
+
 
     // Similarly, when checking if the next event can start at some time t0, in theory we need to check that the age group and 
     // proposed location resource are available at all time t such that t0 <= t < t0 + duration.
