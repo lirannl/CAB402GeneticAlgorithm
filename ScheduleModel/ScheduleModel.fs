@@ -52,8 +52,8 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // This makes the algorithm much faster as we only need to consider up to 5 possible start times, 
     // rather than up to 41 if every possible start point needed to be considered.
     let possibleStartTimes: Time list = 
-        let getStart = fun (scheduled: ScheduledEvent) -> scheduled.finishTime
-        List.append [0 :> Time] (List.map getStart alreadyScheduledEvents)
+        let getFinish = fun (scheduled: ScheduledEvent) -> scheduled.finishTime
+        List.append [0] (List.map getFinish alreadyScheduledEvents)
 
 
     // Similarly, when checking if the next event can start at some time t0, in theory we need to check that the age group and 
@@ -65,7 +65,14 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // Between such time points the resource usage doesn't change, so provided we check at those time points, 
     // we can be sure that the required resources are actually available at all times within that range. 
 
-    // TODO: add correct implementation here
+    // Given a list of comparable elements, determines which position a given element would occupy
+    let theoreticalPos<'a when 'a :> System.IComparable> (elem: 'a) (elemsList: 'a List): int =
+        let sortedList = List.sort (List.append [elem] elemsList)
+        List.findIndex (fun (sortedElem) -> sortedElem = elem) sortedList
+    // Given a certain time range, determine whether the required resources will be available throughout
+    let rec isRangeAcceptable (allocation: Allocation) (startTime: Time) (endTime: Time): bool =
+        
+
     raise (System.NotImplementedException "earliestStart")
 
 // We schedule events one by one. At any given state we have a set of events that have already been scheduled and

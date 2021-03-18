@@ -1,7 +1,6 @@
 ﻿module CAB402.FSharp.GeneticAlgorithm
 
 open RandomMonad
-open Sorters
 
 // The genes of one individual within the population. Each gene is an integer.
 type Individual = int array
@@ -11,6 +10,30 @@ type ScoredIndividual = Individual * float
 
 // a collection of scored individuals that make up a generation
 type Population = ScoredIndividual array
+
+// SORTER FUNCTIONS - ADDED BY ME
+
+// Return only the elements from the orderArr which exist in the provided part. 
+// Since they'll come from the orderArr, they'll already be in order.
+let sortBasedOn (part: int[]) (orderArr: int[]): int[] =
+    // Used to validate the input part and orderArr,
+    // to ensure all elements of the part exist in orderArr
+    let doesOrderArrOmitElem (elem: int) = not (Array.contains elem orderArr)
+    // If a search for elements that aren't in orderArr comes up empty
+    if ((Array.tryFind doesOrderArrOmitElem part) = None) then
+        Array.filter (fun (elem: int) -> Array.contains elem part) orderArr
+    // If "part" contains elements which don't exist in orderArr, raise an exception.
+    // (this should never happen in the unit tests, however without such check, this function makes an assumption which cannot be avoided using type-guards)
+    else raise (System.ArgumentException "Not all elements of \"part\" are contained in \"orderArr\"")
+
+
+// Sorts a population based on its' members fitnesses
+let sortPopulation (pop: Population) =
+    let IndividualScore (scored: ScoredIndividual) =
+        let (_, score) = scored
+        score
+    // Order the population from the most fit to the least fit
+    Array.sortByDescending IndividualScore pop
 
 // Find an individual within the population that has the highest fitness
 let fitest (population: Population) : ScoredIndividual =
