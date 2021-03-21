@@ -46,7 +46,7 @@ let resourceAvailable (resource: Resource) : int =
 let getEventsAt (startTime: Time) (endTime: Time) (events: ScheduledEvent list): ScheduledEvent list =
     let doesEventOccurAtGivenTime (event: ScheduledEvent) =
         // Has the event started?
-        (event.startTime <= endTime)
+        (event.startTime < endTime)
         &&
         // Has the event not finished yet?
         (event.finishTime > startTime)
@@ -105,10 +105,6 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // We only need to check at those time points because they are the time points at which resource usage changes.
     // Between such time points the resource usage doesn't change, so provided we check at those time points, 
     // we can be sure that the required resources are actually available at all times within that range. 
-
-    // Check availability on all relevant points in "possibleStartTimes"
-    let determineRelevantCandidates (startTime: Time) (endTime: Time): Time list =
-        List.filter (fun time -> (time >= startTime) && (time <= endTime)) possibleStartTimes
     
     // Given a certain time range, determine whether the required resources will be available throughout
     // This function is meant to be called with None as the list, since it'll generate its own list
@@ -122,8 +118,8 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
         match List.tryFind (fun l -> l.name = nextEvent.location) usage.locations with
         // If there's some usage of the event's location
         | Some relevantLocationUsage ->
-        // Return whether the usage is below capcaity
-        relevantLocationUsage.used.Length < (resourceAvailable nextEvent.location)
+        // Return whether any of the different resources are unused for the entire range
+        List.tryFind (fun n -> not (List.contains n relevantLocationUsage.used)) [1 .. (resourceAvailable nextEvent.location)] <> None
         // If the location is not in use at all
         | None -> true
             
