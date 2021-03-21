@@ -22,7 +22,10 @@ type Event = { eventName: string; ageGroup: Resource; location: Resource; durati
 // The finish time will always be start time plus the duration of the event.
 type ScheduledEvent = { event: Event; startTime: Time; finishTime: Time; allocated: Allocation }
 
-type Usage = { name: string; used: Allocation list; ageGroup: string }
+type LocationUsage = { name: Resource; used: Allocation list }
+
+type Usage = 
+    { locations: LocationUsage list; ageGroups: Resource list }
 
 // Given a list of comparable elements, determines which position an element would occupy in said list (if it were sorted)
 let theoreticalPos (elem: 'a) (elemsList: 'a List): int =
@@ -39,24 +42,15 @@ let resourceAvailable (resource: Resource) : int =
     | "discus" -> 3   // three larger caged circles are available for discus events
     | _ -> 1          // there is only one of all the other resources, e.g. only one track for running events, only one javelin area, etc.
 
-// Given a time, get the events that are scheduled
-let getEventsAt (time: Time) (events: ScheduledEvent list): ScheduledEvent list =
+// Given a time range, get the events that are scheduled
+let getEventsAt (startTime: Time) (endTime: Time) (events: ScheduledEvent list): ScheduledEvent list =
     let doesEventOccurAtGivenTime (event: ScheduledEvent) =
-        // Has the event started already?
-        (event.startTime < time)
+        // Has the event started?
+        (event.startTime <= endTime)
         &&
         // Has the event not finished yet?
-        (event.finishTime > time)
+        (event.finishTime > startTime)
     List.filter doesEventOccurAtGivenTime events
-
-// Get the resource usage of a specified event
-let getUsage (event: ScheduledEvent): Usage =
-    {
-    ageGroup = event.event.ageGroup;
-    name = event.event.location;
-    // For each event, one usage would be counted
-    used = [event.allocated];
-    }
 
 // Given a set of events that have already been scheduled, determine the earliest possible start time for the specified next event
 // Also return the allocation of which specific instance of the location resource it will be allocated to.
@@ -81,28 +75,27 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
         let getFinish = fun (scheduled: ScheduledEvent) -> scheduled.finishTime
         List.sort ([0] @ (List.map getFinish alreadyScheduledEvents))
 
-    // Get resource usage at a given time
-    let usedResourcesAt (time: Time): Usage list =
-        let events = getEventsAt time alreadyScheduledEvents
+    // Get resource usage at a range starting with the given time
+    let usedResourcesAt (time: Time): Usage =
+        let events = getEventsAt time (time + nextEvent.duration) alreadyScheduledEvents
         
-        let usages = List.map getUsage events
-        let accumulateUsages (usageAcc: Usage list) (currUsage: Usage) = 
-            // Try to find an existing usage of the given resource in the list
-            let existingUsageOption = List.tryFind (fun u -> u.name = currUsage.name) usageAcc
-            match existingUsageOption with
-            | Some existingUsage ->
-            let otherUsages = List.filter (fun u -> u.name <> existingUsage.name) usageAcc
-            // Create a new usage out of a combination of the existing usage and the current usage to be added to the accumulator
-            let updatedUsage: Usage = 
-                {
-                    ageGroup = existingUsage.ageGroup; 
-                    name = existingUsage.name; 
-                    used = existingUsage.used @ currUsage.used
-                }
-            (updatedUsage) :: otherUsages
+        let accumulateUsages (usageAcc: Usage) (currEvent: ScheduledEvent): Usage = 
+            // Try to find an existing usage of the given location in the list
+            match List.tryFind (fun u -> u.name = currEvent.event.location) usageAcc.locations with
+            | Some existingLocationUsage ->
+            let otherUsages = List.filter (fun u -> u.name <> existingLocationUsage.name) usageAcc.locations
+            // Create a new usage out of a combination of the existing usage and the current usage
+            {
+            locations = {name = existingLocationUsage.name; used = currEvent.allocated :: existingLocationUsage.used} :: otherUsages;
+            ageGroups = currEvent.event.ageGroup :: usageAcc.ageGroups
+            }
             // Add the new usage to the usages list and return that as the new accumulator
-            | None -> currUsage :: usageAcc
-        List.fold accumulateUsages [] usages
+            | None -> {
+            locations = {name = currEvent.event.location; used = [currEvent.allocated]} :: usageAcc.locations; 
+            ageGroups = currEvent.event.ageGroup :: usageAcc.ageGroups
+            }
+        // Start accumulating on an empty usage
+        List.fold accumulateUsages {locations = []; ageGroups = []} events
 
     // Similarly, when checking if the next event can start at some time t0, in theory we need to check that the age group and 
     // proposed location resource are available at all time t such that t0 <= t < t0 + duration.
@@ -119,37 +112,27 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     
     // Given a certain time range, determine whether the required resources will be available throughout
     // This function is meant to be called with None as the list, since it'll generate its own list
-    let rec isTimeAcceptable (time: Time) (candidatesToCheckOption: Time list option): bool =
-        match candidatesToCheckOption with
-        | Some [] -> true // None of the candidates lack the necessary resources
-        | Some (candidate :: rest) -> 
-        (
-            let usages = usedResourcesAt candidate
-            // If the age group is unavailable
-            if ((List.tryFind (fun u -> u.ageGroup = nextEvent.ageGroup) usages) <> None) then false
-            else
-            // Check whether the location is in use
-            let relevantUsageOption = List.tryFind (fun u -> u.name = nextEvent.location) usages
-            match relevantUsageOption with
-            // If there's some usage of the event's location
-            | Some relevantUsage ->
-            let locationVacant = relevantUsage.used.Length < (resourceAvailable nextEvent.location)
-            // Make sure the target agegroup isn't already scheduled for something
-            // If all needed resources are available continue searching
-            if (locationVacant) then isTimeAcceptable time (Some rest)
-            else false
-            // If the location is not in use at all
-            | None -> isTimeAcceptable time (Some rest)
-        )
-        // Get a list of the startTimes that are within range
-        | None -> isTimeAcceptable time (Some (determineRelevantCandidates time (time + nextEvent.duration)))
+    let isTimeAcceptable (time: Time): bool =
+        let usage = usedResourcesAt time
+        let result = List.tryFind (fun ageGroup -> ageGroup = nextEvent.ageGroup) usage.ageGroups
+        // If the age group is unavailable
+        if (result <> None) then false
+        else
+        // Check whether the location is in use at all
+        match List.tryFind (fun l -> l.name = nextEvent.location) usage.locations with
+        // If there's some usage of the event's location
+        | Some relevantLocationUsage ->
+        // Return whether the usage is below capcaity
+        relevantLocationUsage.used.Length < (resourceAvailable nextEvent.location)
+        // If the location is not in use at all
+        | None -> true
             
     let rec findEarliestTime (timeCandidates : Time list) = 
         match timeCandidates with
         | (candidate :: rest) ->
-        if (isTimeAcceptable candidate None) then
-            let usageOption = List.tryFind (fun u -> u.name = nextEvent.location) (usedResourcesAt candidate)
-            match usageOption with
+        if (isTimeAcceptable candidate) then
+            let locationUsage = List.tryFind (fun u -> u.name = nextEvent.location) (usedResourcesAt candidate).locations
+            match locationUsage with
             | Some usage ->
             // Find the first unused room
             let allocation = List.find (fun n -> not (List.contains n usage.used)) [1 .. (resourceAvailable nextEvent.location)]
@@ -157,6 +140,7 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
             // If there's no usage, allocate location 1
             | None -> (candidate, 1)
         else findEarliestTime rest
+        // This indicates a problem with the model - as the final member of the time candidates list should always be acceptable
         | [] -> raise (System.ArgumentException "The provided list can't be empty")
     
     findEarliestTime possibleStartTimes
