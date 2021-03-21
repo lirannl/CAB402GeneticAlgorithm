@@ -19,7 +19,7 @@ namespace CSharpGeneticAlgorithm
 
         public int CompareTo(ScoredIndividual other)
         {
-            return score.CompareTo(other);
+            return score.CompareTo(other.score);
         }
     }
 }

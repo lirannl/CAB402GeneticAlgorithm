@@ -7,9 +7,10 @@ namespace CAB402.CSharp
 {
     public class GeneticAlgorithm
     {
-        static IEnumerable<Tuple<int[], double>> ConvertPopulation(Population population)
+        static Tuple<int[], double> GetFitestMember(Population population) 
         {
-            return population.members.Select(member => new Tuple<int[], double>(member.genes, member.score));
+            var fitest = population.members.Max();
+            return new Tuple<int[], double>(fitest.genes, fitest.score);
         }
         public static IEnumerable<Tuple<int[],double>> Optimize(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, int numberOfGenes, int numerOfIndividuals)
         {
@@ -18,7 +19,7 @@ namespace CAB402.CSharp
             
             while (true)
             {
-                yield return ConvertPopulation(currentPopulation).Max();
+                yield return GetFitestMember(currentPopulation);
                 // After yielding, evolve the current population
                 currentPopulation = currentPopulation.Evolve(numerOfIndividuals, rand);
             }

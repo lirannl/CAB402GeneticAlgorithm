@@ -79,7 +79,7 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // rather than up to 41 if every possible start point needed to be considered.
     let possibleStartTimes: Time list = 
         let getFinish = fun (scheduled: ScheduledEvent) -> scheduled.finishTime
-        [0] @ (List.map getFinish alreadyScheduledEvents)
+        List.sort ([0] @ (List.map getFinish alreadyScheduledEvents))
 
     // Get resource usage at a given time
     let usedResourcesAt (time: Time): Usage list =
@@ -115,24 +115,31 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
 
     // Check availability on all relevant points in "possibleStartTimes"
     let determineRelevantCandidates (startTime: Time) (endTime: Time): Time list =
-        List.filter (fun time -> (time >= startTime) && (time < endTime)) possibleStartTimes
+        List.filter (fun time -> (time >= startTime) && (time <= endTime)) possibleStartTimes
     
     // Given a certain time range, determine whether the required resources will be available throughout
     // This function is meant to be called with None as the list, since it'll generate its own list
     let rec isTimeAcceptable (time: Time) (candidatesToCheckOption: Time list option): bool =
         match candidatesToCheckOption with
-        | Some [] -> false // None of the candidates have the necessary resources available
+        | Some [] -> true // None of the candidates lack the necessary resources
         | Some (candidate :: rest) -> 
         (
             let usages = usedResourcesAt candidate
-            let relevantUsage = List.find (fun u -> u.name = nextEvent.location) usages
+            // If the age group is unavailable
+            if ((List.tryFind (fun u -> u.ageGroup = nextEvent.ageGroup) usages) <> None) then false
+            else
+            // Check whether the location is in use
+            let relevantUsageOption = List.tryFind (fun u -> u.name = nextEvent.location) usages
+            match relevantUsageOption with
+            // If there's some usage of the event's location
+            | Some relevantUsage ->
             let locationVacant = relevantUsage.used.Length < (resourceAvailable nextEvent.location)
             // Make sure the target agegroup isn't already scheduled for something
-            let ageGroupAvailable = (List.tryFind (fun u -> u.ageGroup = nextEvent.ageGroup) usages) = None
-            // If all needed resources are available
-            if (locationVacant && ageGroupAvailable) then true
-            // Continue searching
-            else isTimeAcceptable time (Some rest)
+            // If all needed resources are available continue searching
+            if (locationVacant) then isTimeAcceptable time (Some rest)
+            else false
+            // If the location is not in use at all
+            | None -> isTimeAcceptable time (Some rest)
         )
         // Get a list of the startTimes that are within range
         | None -> isTimeAcceptable time (Some (determineRelevantCandidates time (time + nextEvent.duration)))
@@ -141,11 +148,15 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
         match timeCandidates with
         | (candidate :: rest) ->
         if (isTimeAcceptable candidate None) then
-            let usage = List.find (fun u -> u.name = nextEvent.location) (usedResourcesAt candidate)
+            let usageOption = List.tryFind (fun u -> u.name = nextEvent.location) (usedResourcesAt candidate)
+            match usageOption with
+            | Some usage ->
             // Find the first unused room
             let allocation = List.find (fun n -> not (List.contains n usage.used)) [1 .. (resourceAvailable nextEvent.location)]
             (candidate, allocation)
-            else findEarliestTime rest
+            // If there's no usage, allocate location 1
+            | None -> (candidate, 1)
+        else findEarliestTime rest
         | [] -> raise (System.ArgumentException "The provided list can't be empty")
     
     findEarliestTime possibleStartTimes
