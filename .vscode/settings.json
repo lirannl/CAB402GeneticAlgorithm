@@ -1,3 +1,3 @@
 {
-    "dotnet-test-explorer.testProjectPath": "GAUnitTests/GAUnitTests.csproj"
+    "dotnet-test-explorer.testProjectPath": "ScheduleUnitTests/ScheduleUnitTests.csproj"
 }
