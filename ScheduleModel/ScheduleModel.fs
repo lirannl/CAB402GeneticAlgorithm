@@ -106,38 +106,31 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
     // Between such time points the resource usage doesn't change, so provided we check at those time points, 
     // we can be sure that the required resources are actually available at all times within that range. 
     
-    // Given a certain time range, determine whether the required resources will be available throughout
-    // This function is meant to be called with None as the list, since it'll generate its own list
-    let isTimeAcceptable (time: Time): bool =
-        let usage = usedResourcesAt time
-        let result = List.tryFind (fun ageGroup -> ageGroup = nextEvent.ageGroup) usage.ageGroups
-        // If the age group is unavailable
-        if (result <> None) then false
-        else
+    // Given a certain time range, try to find a free allocation
+    let getAllocation (usage: Usage): Allocation option =
         // Check whether the location is in use at all
         match List.tryFind (fun l -> l.name = nextEvent.location) usage.locations with
         // If there's some usage of the event's location
         | Some relevantLocationUsage ->
         // Return whether any of the different resources are unused for the entire range
-        List.tryFind (fun n -> not (List.contains n relevantLocationUsage.used)) [1 .. (resourceAvailable nextEvent.location)] <> None
-        // If the location is not in use at all
-        | None -> true
+        List.tryFind (fun n -> not (List.contains n relevantLocationUsage.used)) [1 .. (resourceAvailable nextEvent.location)]
+        // If the location is not in use at all, allocate #1
+        | None -> Some 1
             
     let rec findEarliestTime (timeCandidates : Time list) = 
         match timeCandidates with
-        | (candidate :: rest) ->
-        if (isTimeAcceptable candidate) then
-            let locationUsage = List.tryFind (fun u -> u.name = nextEvent.location) (usedResourcesAt candidate).locations
-            match locationUsage with
-            | Some usage ->
-            // Find the first unused room
-            let allocation = List.find (fun n -> not (List.contains n usage.used)) [1 .. (resourceAvailable nextEvent.location)]
-            (candidate, allocation)
-            // If there's no usage, allocate location 1
-            | None -> (candidate, 1)
-        else findEarliestTime rest
         // This indicates a problem with the model - as the final member of the time candidates list should always be acceptable
         | [] -> raise (System.ArgumentException "The provided list can't be empty")
+        | (candidate :: rest) ->
+        let usage = usedResourcesAt candidate
+        // If the age group already has an event
+        if (List.contains nextEvent.ageGroup usage.ageGroups) then findEarliestTime rest
+        // Try to find an allocation
+        else 
+        match getAllocation usage with
+        | Some allocation ->
+        (candidate, allocation)
+        | None -> findEarliestTime rest
     
     findEarliestTime possibleStartTimes
 
