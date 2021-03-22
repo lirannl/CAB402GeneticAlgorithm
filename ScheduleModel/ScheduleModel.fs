@@ -138,14 +138,21 @@ let earliestStart (alreadyScheduledEvents: ScheduledEvent list) (nextEvent:Event
 // some event that is next to be scheduled. We determine the earliest possible start time for that next event and 
 // add it to the list of scheduled events.
 let scheduleNext (alreadyScheduled: ScheduledEvent list) (nextEvent: Event): ScheduledEvent list =
-    // TODO: add correct implementation here
-    raise (System.NotImplementedException "scheduleNext")
+    let (time, allocation) = earliestStart alreadyScheduled nextEvent 
+    let nextScheduledEvent: ScheduledEvent = {
+        event = nextEvent;
+        startTime = time;
+        finishTime = time + nextEvent.duration;
+        allocated = allocation;
+    }
+    alreadyScheduled @ [nextScheduledEvent]
 
 // Given a set of events to be scheduled, we schedule them one by one, with the order of scheduling determined by the specified order array.
 // the first event to be scheduled will be events[order[0]], followed by events[order[1]], etc, until we have a completely scheduled set of events.
 let schedule (events: Event array) (order: int array) : ScheduledEvent list =
-    // TODO: add correct implementation here 
-    raise (System.NotImplementedException "schedule")
+    let scheduleEvent (alreadyScheduled: ScheduledEvent list) (currIndex: int): ScheduledEvent list = 
+        scheduleNext alreadyScheduled events.[order.[currIndex]]
+    List.fold scheduleEvent [] [0 .. (events.Length - 1)]
 
 // Return a cost function that we rank the fitness of a particular event scheduling order    
 let athleticsScheduleCost (events: Event array) =
@@ -154,5 +161,7 @@ let athleticsScheduleCost (events: Event array) =
         // Since for a fitness function normally produces a higher value for a better solution, we take the negative of the finish time.
         // For example, if the finish time of our latest event is 181 minutes, then our fitness function would return -181.0
         // TODO: add correct implementation here 
-        raise (System.NotImplementedException "fitnessFunction")
+        let scheduled = schedule events order
+        let finalEvent = scheduled.[scheduled.Length - 1]
+        double (-1 * finalEvent.finishTime)
     fitnessFunction
