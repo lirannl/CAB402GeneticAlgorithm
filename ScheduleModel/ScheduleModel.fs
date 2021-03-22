@@ -160,8 +160,9 @@ let athleticsScheduleCost (events: Event array) =
         // We first schedule the events using the specified event order and then determine how long it will take to conduct all events (i.e. the finish time of the latest finishing event).
         // Since for a fitness function normally produces a higher value for a better solution, we take the negative of the finish time.
         // For example, if the finish time of our latest event is 181 minutes, then our fitness function would return -181.0
-        // TODO: add correct implementation here 
         let scheduled = schedule events order
-        let finalEvent = scheduled.[scheduled.Length - 1]
-        double (-1 * finalEvent.finishTime)
+        // Get a list of all finish times
+        let finishTimes = List.map (fun se -> se.finishTime) scheduled
+        // Return the latest finish time * -1 as a double
+        double (-1 * List.max finishTimes)
     fitnessFunction
