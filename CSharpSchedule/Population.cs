@@ -41,7 +41,7 @@ namespace CSharpGeneticAlgorithm
         public Population ElitismSelection(Population children)
         {
             var membersList = members.ToList();
-            // Sort from least fit to most fit
+            // Sort by fitness
             membersList.Sort();
             // Sort from most fit to least fit
             membersList.Reverse();
@@ -59,11 +59,11 @@ namespace CSharpGeneticAlgorithm
             );
         }
 
-        public Population Evolve(int children, Random rand)
+        public void Evolve(int children, Random rand)
         {
             var childPopulation = Enumerable.Range(0, children)
                 .Select(i => Procreate(rand)).ToArray();
-            return ElitismSelection(new Population(fitnessFunction, childPopulation));
+            members = ElitismSelection(new Population(fitnessFunction, childPopulation)).members;
         }
 
         public ScoredIndividual this[int index] { get => ((IList<ScoredIndividual>)members)[index]; set => ((IList<ScoredIndividual>)members)[index] = value; }

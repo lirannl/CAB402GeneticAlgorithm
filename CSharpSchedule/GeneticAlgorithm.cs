@@ -19,9 +19,10 @@ namespace CAB402.CSharp
             
             while (true)
             {
-                yield return GetFitestMember(currentPopulation);
+                var fitest = GetFitestMember(currentPopulation);
+                yield return fitest;
                 // After yielding, evolve the current population
-                currentPopulation = currentPopulation.Evolve(numerOfIndividuals, rand);
+                currentPopulation.Evolve(numerOfIndividuals, rand);
             }
         }
     }

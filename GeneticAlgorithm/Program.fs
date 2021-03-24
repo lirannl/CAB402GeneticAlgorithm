@@ -15,13 +15,13 @@ type Population = ScoredIndividual array
 
 // Return only the elements from the orderArr which exist in the provided part. 
 // Since they'll come from the orderArr, they'll already be in order.
-let sortBasedOn (part: int[]) (orderArr: int[]): int[] =
+let sortBasedOn (orderArr: int[]) (part: int[]): int[] =
     // Used to validate the input part and orderArr,
     // to ensure all elements of the part exist in orderArr
-    let doesOrderArrOmitElem (elem: int) = not (Array.contains elem orderArr)
+    let doesOrderArrOmitElem (elem: int) = not (orderArr |> Array.contains elem)
     // If a search for elements that aren't in orderArr comes up empty
     if ((Array.tryFind doesOrderArrOmitElem part) = None) then
-        Array.filter (fun (elem: int) -> Array.contains elem part) orderArr
+        Array.filter (fun (elem: int) -> part |> Array.contains elem) orderArr
     // If "part" contains elements which don't exist in orderArr, raise an exception.
     // (this should never happen in the unit tests, however without such check, this function makes an assumption which cannot be avoided using type-guards)
     else raise (System.ArgumentException "Not all elements of \"part\" are contained in \"orderArr\"")
@@ -33,19 +33,16 @@ let sortPopulation (pop: Population) =
         let (_, score) = scored
         score
     // Order the population from the most fit to the least fit
-    Array.sortByDescending IndividualScore pop
+    pop |> Array.sortByDescending IndividualScore
 
 // Find an individual within the population that has the highest fitness
 let fitest (population: Population) : ScoredIndividual =
-    // Destructure the parameters
-    let reducer ((maxIndiv, maxFlt): ScoredIndividual) ((currIndiv, currFlt): ScoredIndividual) =
-        // Restructure the parameters for the return value
-        if currFlt > maxFlt then
-            (currIndiv, currFlt)
-        else
-            (maxIndiv, maxFlt)
-
-    Array.reduce reducer population
+    population |> Array.reduce (fun (maxIndiv, maxFlt) (currIndiv, currFlt) -> 
+    // Restructure the parameters for the return value
+    if currFlt > maxFlt then
+        (currIndiv, currFlt)
+    else
+        (maxIndiv, maxFlt))
 
 // Given a set of competeting individuals, return the winning individual (i.e. one with best fitness)
 let tournamentWinner (competitors: Population) : Individual =
@@ -80,7 +77,7 @@ let tournamentSelect (population: Population) : Rand<Individual> =
 // So the child in this example will be [0,3,5,4,6,2,1]
 let crossAt (parent1: Individual) (parent2: Individual) (splitPoint: int) : Individual =
     let (parent1Genes, remaining) = Array.splitAt splitPoint parent1
-    let sortedRemaining = sortBasedOn remaining parent2
+    let sortedRemaining = remaining |> sortBasedOn parent2
     Array.append parent1Genes sortedRemaining
 
 // Combine the genes of parent1 and parent2 at a randonly choosen splitpoint as per the above crossAt algorithm
@@ -101,10 +98,10 @@ let cross (parent1: Individual) (parent2: Individual) : Rand<Individual> =
 // The start and end sections of the genes are left intact, while the genes in the middle section are reversed in order.
 // For example reverseMutateAt [0,3,5,4,2,1,6] 2 4 = [0,3,2,4,5,1,6]
 let reverseMutateAt (genes: Individual) (firstIndex: int) (secondIndex: int) : Individual =
-    let (part1, rest) = Array.splitAt firstIndex genes
+    let (part1, rest) = genes |> Array.splitAt firstIndex
 
     let (part2, part3) =
-        Array.splitAt ((secondIndex - firstIndex) + 1) rest
+        rest |> Array.splitAt ((secondIndex - firstIndex) + 1)
 
     Array.concat (
         seq {
@@ -178,7 +175,7 @@ let procreate fitnessFunction (population: Population) : Rand<ScoredIndividual> 
 
         let! unMutatedChild = cross parent1 parent2
         let! child = possiblyMutate unMutatedChild
-        return score fitnessFunction child
+        return child |> score fitnessFunction
     }
 
 // Create a new generation by creating the specified number of children through procreation and then
