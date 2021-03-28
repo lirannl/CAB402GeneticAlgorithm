@@ -7,11 +7,16 @@ using System.Threading.Tasks;
 
 namespace CSharpGeneticAlgorithm
 {
+    // An enumerable collection of scored individuals
     public class Population : IEnumerable<ScoredIndividual>
     {
         public ScoredIndividual[] members;
+        // Since each population's individuals are expected to use the same fitness function 
+        // (the genetic algorithm is meant to be used on one problem at a time)
+        // it's safe to store on a per-population basis
         readonly Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction;
 
+        // Generate a new population of random invidiuals
         public Population(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, int geneCount, int memberCount, Random rand)
         {
             this.fitnessFunction = fitnessFunction;
@@ -30,7 +35,7 @@ namespace CSharpGeneticAlgorithm
         public ScoredIndividual ConductTournament(Random rand)
         {
             int n = 2;
-            // Randomly select two members of the population
+            // Randomly select n members of the population
             var competitors = new ScoredIndividual[n];
             foreach (var i in Enumerable.Range(0, n))
             {
@@ -40,6 +45,7 @@ namespace CSharpGeneticAlgorithm
 
         }
 
+        // Create an array out of the most fit members of the population, and new children
         public ScoredIndividual[] ElitismSelection(ScoredIndividual[] children)
         {
             var membersList = members.ToList();
@@ -57,13 +63,16 @@ namespace CSharpGeneticAlgorithm
             var parent1 = ConductTournament(rand);
             var parent2 = ConductTournament(rand);
 
+            // Cross the genes of the two parents
             var childGenes = parent1.genes.CrossWith(parent2.genes, rand);
             // Possibly cause a mutation
             childGenes.Mutate(rand);
 
+            // Score the genes of the new child to create a new individual
             return new ScoredIndividual(fitnessFunction, childGenes);
         }
 
+        // Evolve the entire population, producing *children* amount of new children, with the rest being the most fit parents
         public void Evolve(int children, Random rand)
         {
             var childPopulation = new ScoredIndividual[children];
@@ -71,8 +80,7 @@ namespace CSharpGeneticAlgorithm
             {
                 childPopulation[i] = Procreate(rand);
             }
-            var newMembers = ElitismSelection(childPopulation);
-            members = newMembers;
+            members = ElitismSelection(childPopulation);
         }
 
         public ScoredIndividual this[int index] { 

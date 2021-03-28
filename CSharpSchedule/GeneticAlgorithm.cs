@@ -19,8 +19,7 @@ namespace CAB402.CSharp
             
             while (true)
             {
-                var fitest = GetFitestMember(currentPopulation);
-                yield return fitest;
+                yield return GetFitestMember(currentPopulation);
                 // After yielding, evolve the current population
                 currentPopulation.Evolve(numerOfIndividuals, rand);
             }

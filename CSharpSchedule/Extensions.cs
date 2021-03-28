@@ -18,6 +18,7 @@ namespace CSharpGeneticAlgorithm
         // Randomly rearrange the items in an array
         public static void Shuffle<T>(this T[] items, Random rand)
         {
+            // Create a list to keep track of the unshuffled items
             List<T> itemsList = items.ToList();
 
             int outputIdx = 0;
@@ -39,6 +40,7 @@ namespace CSharpGeneticAlgorithm
             var decision = rand.NextDouble();
             return decision <= chance;
         }
+
         public static T[] SortAccordingTo<T>(this T[] segment, T[] orderArr)
         {
             List<T> unsortedItems = segment.ToList();
@@ -53,11 +55,15 @@ namespace CSharpGeneticAlgorithm
                     unsortedItems.Remove(item);
                 }
 
+                // All of the segment's members have been sorted, 
+                // there's no need to continue going through
                 if (unsortedItems.Count == 0) break;
             }
 
             return segment;
         }
+
+        // Split an array into two parts at a given point
         public static (T[], T[]) Split<T>(this T[] source, int splitPoint)
         {
             var part0 = new T[splitPoint];
@@ -85,6 +91,7 @@ namespace CSharpGeneticAlgorithm
             var (middle, end) = rest.Split(secondIndex - firstIndex);
 
             var newGenes = beginning.Concat(middle.Reverse()).Concat(end).ToArray();
+            // Copy the new genes into the provided genes array
             Array.Copy(newGenes, genes, genes.Length);
 
             return;
