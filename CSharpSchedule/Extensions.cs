@@ -60,13 +60,13 @@ namespace CSharpGeneticAlgorithm
         }
         public static (T[], T[]) Split<T>(this T[] source, int splitPoint)
         {
-            var left = new T[splitPoint];
-            var right = new T[source.Length - left.Length];
+            var part0 = new T[splitPoint];
+            var part1 = new T[source.Length - part0.Length];
 
-            Array.Copy(source, left, left.Length);
-            Array.Copy(source, left.Length, right, 0, right.Length);
+            Array.Copy(source, part0, part0.Length);
+            Array.Copy(source, part0.Length, part1, 0, part1.Length);
 
-            return (left, right);
+            return (part0, part1);
         }
 
         readonly static double MutateProbability = 0.15;
