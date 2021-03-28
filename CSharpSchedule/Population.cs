@@ -12,11 +12,6 @@ namespace CSharpGeneticAlgorithm
         public ScoredIndividual[] members;
         readonly Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction;
 
-        Population(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, ScoredIndividual[] members)
-        {
-            this.fitnessFunction = fitnessFunction;
-            this.members = members;
-        }
         public Population(Microsoft.FSharp.Core.FSharpFunc<int[], double> fitnessFunction, int geneCount, int memberCount, Random rand)
         {
             this.fitnessFunction = fitnessFunction;
@@ -24,8 +19,11 @@ namespace CSharpGeneticAlgorithm
             members = new ScoredIndividual[memberCount];
             foreach (var i in Enumerable.Range(0, memberCount))
             {
-                var baseGenes = Enumerable.Range(0, geneCount).ToArray();
-                members[i] = new ScoredIndividual(fitnessFunction, RandomOps.Shuffle(baseGenes, rand));
+                // Generate a genomic sequence
+                var genes = Enumerable.Range(0, geneCount).ToArray();
+                // Shuffle it randomly
+                genes.Shuffle(rand);
+                members[i] = new ScoredIndividual(fitnessFunction, genes);
             }
         }
 
@@ -33,19 +31,25 @@ namespace CSharpGeneticAlgorithm
         {
             int n = 2;
             // Randomly select two members of the population
-            var competitors = Enumerable.Range(0, n).Select(_=>RandomOps.Pick(members, rand));
+            var competitors = new ScoredIndividual[n];
+            foreach (var i in Enumerable.Range(0, n))
+            {
+                competitors[i] = members.Pick(rand);
+            }
             return competitors.Max();
 
         }
 
-        public Population ElitismSelection(Population children)
+        public ScoredIndividual[] ElitismSelection(ScoredIndividual[] children)
         {
             var membersList = members.ToList();
             // Sort by fitness
             membersList.Sort();
             // Sort from most fit to least fit
             membersList.Reverse();
-            return new Population(fitnessFunction, children.Concat(membersList.Take(10)).ToArray());
+            // How many members are needed to get the next generation to be as large as the current one
+            var lackingChildren = members.Length - children.Length;
+            return children.Concat(membersList.Take(lackingChildren)).ToArray();
         }
 
         public ScoredIndividual Procreate(Random rand)
@@ -53,20 +57,28 @@ namespace CSharpGeneticAlgorithm
             var parent1 = ConductTournament(rand);
             var parent2 = ConductTournament(rand);
 
-            return new ScoredIndividual(
-                fitnessFunction,
-                Individual.Cross(parent1.genes, parent2.genes, rand)
-            );
+            var childGenes = parent1.genes.CrossWith(parent2.genes, rand);
+            // Possibly cause a mutation
+            childGenes.Mutate(rand);
+
+            return new ScoredIndividual(fitnessFunction, childGenes);
         }
 
         public void Evolve(int children, Random rand)
         {
-            var childPopulation = Enumerable.Range(0, children)
-                .Select(i => Procreate(rand)).ToArray();
-            members = ElitismSelection(new Population(fitnessFunction, childPopulation)).members;
+            var childPopulation = new ScoredIndividual[children];
+            foreach (var i in Enumerable.Range(0, children))
+            {
+                childPopulation[i] = Procreate(rand);
+            }
+            var newMembers = ElitismSelection(childPopulation);
+            members = newMembers;
         }
 
-        public ScoredIndividual this[int index] { get => ((IList<ScoredIndividual>)members)[index]; set => ((IList<ScoredIndividual>)members)[index] = value; }
+        public ScoredIndividual this[int index] { 
+            get => ((IList<ScoredIndividual>)members)[index]; 
+            set => ((IList<ScoredIndividual>)members)[index] = value; 
+        }
 
         public int Count => ((ICollection<ScoredIndividual>)members).Count;
 
