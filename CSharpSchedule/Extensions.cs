@@ -39,7 +39,7 @@ namespace CSharpGeneticAlgorithm
             var decision = rand.NextDouble();
             return decision <= chance;
         }
-        public static T[] sortAccordingTo<T>(this T[] segment, T[] orderArr)
+        public static T[] SortAccordingTo<T>(this T[] segment, T[] orderArr)
         {
             List<T> unsortedItems = segment.ToList();
 
@@ -96,9 +96,9 @@ namespace CSharpGeneticAlgorithm
             var splitPoint = rand.Next(1, parent1.Length - 1);
             var (parent1Genes, parent2Genes) = parent2.Split(splitPoint);
 
-            parent2Genes.sortAccordingTo(parent2);
+            parent2Genes.SortAccordingTo(parent2);
 
-            return parent1Genes.Concat(parent2Genes.sortAccordingTo(parent2)).ToArray();
+            return parent1Genes.Concat(parent2Genes).ToArray();
         }
     }
 }
