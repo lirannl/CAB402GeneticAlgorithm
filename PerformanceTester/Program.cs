@@ -17,13 +17,13 @@ namespace PerformanceTester
             }
         }
 
-        static void Main()
+        static void Main(String [] args)
         {
+            var lang = args[0];
             var indivsNum = 100;
             var steps = 1000;
             var cities = RandomMonad.evaluateWith(new Random(), TSP.generateRandomCities(indivsNum));
             FSharpFunc<int[], double> fitnessFunc = TSP.TSPCost(cities);
-            var lang = "csharp";
             var startTime = DateTime.Now;
             var results = Optimize(lang)(fitnessFunc, indivsNum, indivsNum).Take(steps).ToArray();
             var duration = DateTime.Now - startTime;
