@@ -17,8 +17,7 @@ type Population = ScoredIndividual array
 // Since they'll come from the orderArr, they'll already be in order.
 let sortBasedOn (orderArr: int []) (part: int []) : int [] =
     let sorted =
-        Array.filter (fun (elem: int) -> part |> Array.contains elem) orderArr
-
+        orderArr |> Array.filter (fun (elem: int) -> part |> Array.contains elem)
     if (sorted.Length = part.Length) then
         sorted
     // If the sorted list has a different length than the original
