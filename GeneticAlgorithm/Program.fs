@@ -13,18 +13,18 @@ type Population = ScoredIndividual array
 
 // SORTER FUNCTIONS - ADDED BY ME
 
-// Return only the elements from the orderArr which exist in the provided part. 
+// Return only the elements from the orderArr which exist in the provided part.
 // Since they'll come from the orderArr, they'll already be in order.
-let sortBasedOn (orderArr: int[]) (part: int[]): int[] =
-    // Used to validate the input part and orderArr,
-    // to ensure all elements of the part exist in orderArr
-    let doesOrderArrOmitElem (elem: int) = not (orderArr |> Array.contains elem)
-    // If a search for elements that aren't in orderArr comes up empty
-    if ((Array.tryFind doesOrderArrOmitElem part) = None) then
+let sortBasedOn (orderArr: int []) (part: int []) : int [] =
+    let sorted =
         Array.filter (fun (elem: int) -> part |> Array.contains elem) orderArr
-    // If "part" contains elements which don't exist in orderArr, raise an exception.
+
+    if (sorted.Length = part.Length) then
+        sorted
+    // If the sorted list has a different length than the original
     // (this should never happen in the unit tests, however without such check, this function makes an assumption which cannot be avoided using type-guards)
-    else raise (System.ArgumentException "Not all elements of \"part\" are contained in \"orderArr\"")
+    else
+        raise (System.ArgumentException "Not all elements of \"part\" are contained in \"orderArr\"")
 
 
 // Sorts a population based on its' members fitnesses
@@ -37,12 +37,14 @@ let sortPopulation (pop: Population) =
 
 // Find an individual within the population that has the highest fitness
 let fitest (population: Population) : ScoredIndividual =
-    population |> Array.reduce (fun (maxIndiv, maxFlt) (currIndiv, currFlt) -> 
-    // Restructure the parameters for the return value
-    if currFlt > maxFlt then
-        (currIndiv, currFlt)
-    else
-        (maxIndiv, maxFlt))
+    population
+    |> Array.reduce
+        (fun (maxIndiv, maxFlt) (currIndiv, currFlt) ->
+            // Restructure the parameters for the return value
+            if currFlt > maxFlt then
+                (currIndiv, currFlt)
+            else
+                (maxIndiv, maxFlt))
 
 // Given a set of competeting individuals, return the winning individual (i.e. one with best fitness)
 let tournamentWinner (competitors: Population) : Individual =
@@ -101,7 +103,8 @@ let reverseMutateAt (genes: Individual) (firstIndex: int) (secondIndex: int) : I
     let (part1, rest) = genes |> Array.splitAt firstIndex
 
     let (part2, part3) =
-        rest |> Array.splitAt ((secondIndex - firstIndex) + 1)
+        rest
+        |> Array.splitAt ((secondIndex - firstIndex) + 1)
 
     Array.concat (
         seq {
